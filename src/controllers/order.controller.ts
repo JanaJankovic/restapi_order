@@ -13,6 +13,7 @@ import { OrderCreateDto, OrderGetDto } from 'src/models/order.dto';
 import { Order } from 'src/schema/order.schema';
 import { MessageDto } from 'src/models/message.dto';
 import { BadRequestFilter, MongoFilter } from 'src/utils/expection.filters';
+import { TotalDto } from 'src/models/total.dto';
 
 @ApiTags('orders')
 @Controller('order')
@@ -29,6 +30,12 @@ export class OrderController {
   @Get('user/:user_id')
   async getAllUser(@Param() params): Promise<OrderGetDto[]> {
     return await this.dbService.getUserOrders(params.user_id);
+  }
+
+  @UseFilters(new MongoFilter(), new BadRequestFilter())
+  @Get('totalAmount/:id')
+  async getTotalAmount(@Param() params): Promise<TotalDto> {
+    return await this.dbService.getTotalAmount(params.id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())

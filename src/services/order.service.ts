@@ -6,6 +6,7 @@ import { OrderCreateDto, OrderGetDto } from 'src/models/order.dto';
 import { Order, OrderDocument } from 'src/schema/order.schema';
 import { NetworkService } from './network.service';
 import { ItemService } from './item.service';
+import { TotalDto } from 'src/models/total.dto';
 
 @Injectable()
 export class OrderService {
@@ -53,6 +54,23 @@ export class OrderService {
 
     orders = await Promise.all(promises);
     return orders;
+  }
+
+  async getTotalAmount(id: string): Promise<TotalDto> {
+    const order = await this.orderRepo.findOne({ _id: id }).exec();
+    if (order == undefined)
+      return <TotalDto>{
+        order_id: undefined,
+        totalAmount: undefined,
+      };
+
+    const items = await this.itemService.findItemsByOrderId(order._id);
+    let total = 0;
+    if (items != undefined && items.length > 0)
+      items.forEach((item) => {
+        total += item.article.price * item.quantity;
+      });
+    return <TotalDto>{ order_id: id, totalAmount: total };
   }
 
   async createOrder(orderDto: OrderCreateDto): Promise<Order> {
