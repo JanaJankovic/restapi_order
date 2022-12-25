@@ -12,6 +12,9 @@ export class OrderGetDto {
   @ApiProperty()
   user_id?: string | undefined;
 
+  @ApiProperty()
+  completed?: boolean | undefined;
+
   @ApiProperty({ type: [ItemGetDto] })
   items?: Array<ItemGetDto> | undefined;
 }
@@ -32,4 +35,7 @@ export class OrderUpdateDto {
 
   @ApiProperty({ type: ItemCreateDto })
   item: ItemCreateDto | undefined;
+
+  @ApiProperty()
+  completed?: boolean | undefined;
 }

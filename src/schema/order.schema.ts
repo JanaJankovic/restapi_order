@@ -16,6 +16,10 @@ export class Order {
   @ApiProperty()
   @Prop()
   user_id?: string;
+
+  @ApiProperty()
+  @Prop()
+  completed?: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

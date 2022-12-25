@@ -17,7 +17,9 @@ export class OrderService {
   ) {}
 
   async getUserOrders(id: string): Promise<OrderGetDto[]> {
-    const all = await this.orderRepo.find({ user_id: id }).exec();
+    const all = await this.orderRepo
+      .find({ user_id: id, completed: true })
+      .exec();
     if (all == undefined) return [];
 
     let orders: OrderGetDto[] = [];
@@ -27,6 +29,7 @@ export class OrderService {
         _id: o._id,
         user_id: o.user_id,
         session_id: o.session_id,
+        completed: o.completed,
       };
       order.items = items;
       return order;
@@ -38,7 +41,6 @@ export class OrderService {
 
   async getGuestOrders(id: string): Promise<OrderGetDto[]> {
     const all = await this.orderRepo.find({ session_id: id }).exec();
-    console.log(all);
 
     let orders: OrderGetDto[] = [];
     const promises = all.map(async (o) => {
@@ -47,6 +49,7 @@ export class OrderService {
         _id: o._id,
         user_id: o.user_id,
         session_id: o.session_id,
+        completed: o.completed,
       };
       order.items = items;
       return order;
@@ -74,8 +77,15 @@ export class OrderService {
   }
 
   async createOrder(orderDto: OrderCreateDto): Promise<Order> {
-    const order = new this.orderRepo(orderDto);
-    return order.save();
+    const orderExists = await this.orderRepo
+      .findOne({ session_id: orderDto.session_id })
+      .exec();
+    if (orderExists == undefined || orderExists == null) {
+      const order = new this.orderRepo(orderDto);
+      order.completed = false;
+      return order.save();
+    }
+    return orderExists;
   }
 
   async completeOrder(id: string): Promise<MessageDto> {
@@ -98,17 +108,15 @@ export class OrderService {
         content += 'Item: ' + item.article.title + ' invenvtory not updated';
     });
 
-    const resp = await this.deleteOrder(id);
-
-    if (content != '')
-      return <MessageDto>{
-        content: content + ' ' + resp.content,
-        error: true,
-        status: 500,
-      };
+    await this.orderRepo.updateOne(
+      { _id: order._id },
+      {
+        completed: true,
+      },
+    );
 
     return <MessageDto>{
-      content: 'Order completed. ' + resp.content,
+      content: 'Order completed. ' + content,
       error: false,
       status: 200,
     };
