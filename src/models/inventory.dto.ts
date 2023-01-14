@@ -21,4 +21,7 @@ export class InventoryDto {
 
   @ApiProperty()
   quantity: number;
+
+  @ApiProperty()
+  correlationId?: string;
 }

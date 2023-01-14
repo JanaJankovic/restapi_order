@@ -21,4 +21,7 @@ export class ArticleDto {
 
   @ApiProperty()
   imageUrl: string;
+
+  @ApiProperty()
+  correlationId?: string;
 }

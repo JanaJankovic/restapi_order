@@ -10,6 +10,9 @@ import { Order, OrderSchema } from './schema/order.schema';
 import { HttpModule } from '@nestjs/axios';
 import { NetworkService } from './services/network.service';
 import { ConfigModule } from '@nestjs/config';
+import { NetworkExceptionFilter } from './utils/expection.filters';
+import { APP_FILTER } from '@nestjs/core';
+import { RabbitMQService } from './services/publisher.service';
 
 @Module({
   imports: [
@@ -20,6 +23,15 @@ import { ConfigModule } from '@nestjs/config';
     HttpModule,
   ],
   controllers: [ItemController, OrderController],
-  providers: [ItemService, OrderService, NetworkService],
+  providers: [
+    ItemService,
+    OrderService,
+    NetworkService,
+    RabbitMQService,
+    {
+      provide: APP_FILTER,
+      useClass: NetworkExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}

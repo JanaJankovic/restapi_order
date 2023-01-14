@@ -11,6 +11,9 @@ export class ItemCreateDto {
 
   @ApiProperty()
   quantity: number;
+
+  @ApiProperty()
+  correlationId: string;
 }
 
 export class ItemUpdateDto {
@@ -28,6 +31,9 @@ export class ItemUpdateDto {
 
   @ApiProperty()
   article_id: string;
+
+  @ApiProperty()
+  correlationId?: string;
 }
 
 export class ItemGetDto {
@@ -51,4 +57,7 @@ export class ItemGetDto {
 
   @ApiProperty()
   quantity: number;
+
+  @ApiProperty()
+  correlationId?: string;
 }

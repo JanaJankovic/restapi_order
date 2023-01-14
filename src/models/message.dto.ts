@@ -9,4 +9,7 @@ export class MessageDto {
 
   @ApiProperty()
   status: number | undefined;
+
+  @ApiProperty()
+  correlationId?: string;
 }

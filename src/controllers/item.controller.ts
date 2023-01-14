@@ -3,6 +3,7 @@ import {
   Get,
   Put,
   Delete,
+  Request,
   Body,
   Param,
   Post,
@@ -22,31 +23,37 @@ export class ItemController {
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Get(':order_id')
-  async getItems(@Param() params): Promise<ItemGetDto[]> {
-    return await this.dbService.findItemsByOrderId(params.order_id);
+  async getItems(@Request() req, @Param() params): Promise<ItemGetDto[]> {
+    return await this.dbService.findItemsByOrderId(req.url, params.order_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
-  async createItem(@Body() body: ItemCreateDto): Promise<Item | MessageDto> {
-    return await this.dbService.createItem(body);
+  async createItem(
+    @Request() req,
+    @Body() body: ItemCreateDto,
+  ): Promise<Item | MessageDto> {
+    return await this.dbService.createItem(req.url, body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Put('')
-  async updateItem(@Body() body: ItemUpdateDto): Promise<MessageDto> {
-    return await this.dbService.updateItem(body);
+  async updateItem(
+    @Request() req,
+    @Body() body: ItemUpdateDto,
+  ): Promise<MessageDto> {
+    return await this.dbService.updateItem(req.url, body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete('empty-cart/:order_id')
-  async deleteMany(@Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteMany(params.order_id);
+  async deleteMany(@Request() req, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteMany(req.url, params.order_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete(':id')
-  async deleteItem(@Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteItem(params.id);
+  async deleteItem(@Request() req, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteItem(req.url, params.id);
   }
 }

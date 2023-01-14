@@ -17,6 +17,9 @@ export class OrderGetDto {
 
   @ApiProperty({ type: [ItemGetDto] })
   items?: Array<ItemGetDto> | undefined;
+
+  @ApiProperty()
+  correlationId?: string;
 }
 
 export class OrderCreateDto {
@@ -27,6 +30,9 @@ export class OrderCreateDto {
 
   @ApiProperty()
   user_id?: string | undefined;
+
+  @ApiProperty()
+  correlationId?: string;
 }
 
 export class OrderUpdateDto {
@@ -38,4 +44,7 @@ export class OrderUpdateDto {
 
   @ApiProperty()
   completed?: boolean | undefined;
+
+  @ApiProperty()
+  correlationId?: string;
 }

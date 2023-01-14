@@ -13,10 +13,16 @@ import { lastValueFrom } from 'rxjs';
 export class NetworkService {
   constructor(private readonly httpService: HttpService) {}
 
-  async getArticlesFromIds(ids: string[]): Promise<any> {
+  async getArticlesFromIds(
+    ids: string[],
+    correlationId?: string,
+  ): Promise<any> {
     return await lastValueFrom(
       this.httpService
-        .post(ARTICLE_SERVICE_URL + ARTICLE_ENDPOINTS.articlesById, ids)
+        .post(ARTICLE_SERVICE_URL + ARTICLE_ENDPOINTS.articlesById, {
+          data: ids,
+          correlationId: correlationId,
+        })
         .pipe(
           map((res) => {
             return res.data;
@@ -30,10 +36,16 @@ export class NetworkService {
     );
   }
 
-  async getInventoriesFromArticleIds(ids: string[]): Promise<any> {
+  async getInventoriesFromArticleIds(
+    ids: string[],
+    correlationId?: string,
+  ): Promise<any> {
     return await lastValueFrom(
       this.httpService
-        .post(INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getInventories, ids)
+        .post(INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getInventories, {
+          data: ids,
+          correlationId: correlationId,
+        })
         .pipe(
           map((res): any => {
             return res.data;
@@ -47,10 +59,13 @@ export class NetworkService {
     );
   }
 
-  async getTotalQuantity(id: string): Promise<any> {
+  async getTotalQuantity(id: string, correlationId?: string): Promise<any> {
     return await lastValueFrom(
       this.httpService
-        .get(INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getTotalQuantity + id)
+        .post(
+          INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getTotalQuantity + id,
+          { correlationId: correlationId },
+        )
         .pipe(
           map((res) => {
             return res.data?.totalQuantity;
@@ -64,12 +79,17 @@ export class NetworkService {
     );
   }
 
-  async updateInventory(article_id: string, quantity: number): Promise<any> {
+  async updateInventory(
+    article_id: string,
+    quantity: number,
+    correlationId?: string,
+  ): Promise<any> {
     return await lastValueFrom(
       this.httpService
         .put(INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.decrementQuantity, {
           articleId: article_id,
           quantity: quantity,
+          correlationId: correlationId,
         })
         .pipe(
           map((res): any => {
