@@ -7,7 +7,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { MongoError } from 'mongodb';
-import { RabbitMQService } from 'src/services/publisher.service';
+import { RabbitMQService } from 'src/services/rabbitmq.service';
 import { v4 } from 'uuid';
 
 @Catch()
@@ -52,6 +52,7 @@ export class NetworkExceptionFilter {
     };
 
     this.publisher.publish(
+      '',
       this.publisher.createMessage(
         v4(),
         request.url,

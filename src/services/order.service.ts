@@ -7,7 +7,7 @@ import { Order, OrderDocument } from 'src/schema/order.schema';
 import { NetworkService } from './network.service';
 import { ItemService } from './item.service';
 import { TotalDto } from 'src/models/total.dto';
-import { RabbitMQService } from './publisher.service';
+import { RabbitMQService } from './rabbitmq.service';
 import { v4 } from 'uuid';
 
 @Injectable()
@@ -43,14 +43,7 @@ export class OrderService {
       };
       order.items = items;
 
-      this.publisher.publish(
-        this.publisher.createMessage(
-          correlationId,
-          url,
-          'INFO',
-          `Found user order with ${order.items.length} items`,
-        ),
-      );
+      //publish
       return order;
     });
 
@@ -78,15 +71,7 @@ export class OrderService {
       };
       order.items = items;
 
-      this.publisher.publish(
-        this.publisher.createMessage(
-          correlationId,
-          url,
-          'INFO',
-          `Found guest order with ${order.items.length} items`,
-        ),
-      );
-
+      //publish
       return order;
     });
 
@@ -115,15 +100,7 @@ export class OrderService {
         total += item.article.price * item.quantity;
       });
 
-    this.publisher.publish(
-      this.publisher.createMessage(
-        correlationId,
-        url,
-        'INFO',
-        `Found total for order: ${total}`,
-      ),
-    );
-
+    //publish
     return <TotalDto>{ order_id: id, totalAmount: total };
   }
 
@@ -137,21 +114,12 @@ export class OrderService {
       const order = new this.orderRepo(orderDto);
       order.completed = false;
 
-      this.publisher.publish(
-        this.publisher.createMessage(
-          correlationId,
-          url,
-          'INFO',
-          'Created new order',
-        ),
-      );
+      //publish
 
       return order.save();
     }
 
-    this.publisher.publish(
-      this.publisher.createMessage(correlationId, url, 'WARN', 'Order exists'),
-    );
+    //publish
 
     return orderExists;
   }
@@ -161,14 +129,7 @@ export class OrderService {
 
     const order = await this.orderRepo.findOne({ _id: id }).exec();
     if (order == undefined) {
-      this.publisher.publish(
-        this.publisher.createMessage(
-          correlationId,
-          url,
-          'WARN',
-          'Order not found',
-        ),
-      );
+      //publish
 
       return <MessageDto>{
         content: 'Order not found',
@@ -192,14 +153,7 @@ export class OrderService {
 
       if (res.error != undefined && res.error == true) {
         content += 'Item: ' + item.article.title + ' invenvtory not updated';
-        this.publisher.publish(
-          this.publisher.createMessage(
-            correlationId,
-            url,
-            'WARN',
-            `Item ${item.article.title} invenvtory not updated`,
-          ),
-        );
+        //publish
       }
     });
 
@@ -210,14 +164,7 @@ export class OrderService {
       },
     );
 
-    this.publisher.publish(
-      this.publisher.createMessage(
-        correlationId,
-        url,
-        'INFO',
-        'Order completed',
-      ),
-    );
+    //publish
 
     return <MessageDto>{
       content: 'Order completed. ' + content,
@@ -233,28 +180,14 @@ export class OrderService {
     const itemsNotFound = res == undefined || res.deletedCount == 0;
     const items = itemsNotFound ? ' Items not found.' : ' Items deleted.';
 
-    this.publisher.publish(
-      this.publisher.createMessage(
-        correlationId,
-        url,
-        itemsNotFound ? 'WARN' : 'INFO',
-        items,
-      ),
-    );
+    //publish
 
     const resp: any = await this.orderRepo.deleteOne({ _id: id });
 
     const err = resp != undefined && resp.deletedCount != undefined;
     const content = err ? 'Deleted successfully.' + items : 'Error occured';
 
-    this.publisher.publish(
-      this.publisher.createMessage(
-        correlationId,
-        url,
-        err ? 'INFO' : 'ERROR',
-        content,
-      ),
-    );
+    //publish
 
     return <MessageDto>{ content: content, error: err };
   }
