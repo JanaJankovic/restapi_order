@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { CURRENT_PORT, RABBIT_MQ } from './global/constants';
+import { CURRENT_PORT, RABBITMQ_QUEUE, RABBIT_MQ } from './global/constants';
 import { BadRequestFilter, MongoFilter } from './utils/expection.filters';
 
 async function bootstrap() {
@@ -23,7 +23,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [RABBIT_MQ],
-      queue: 'iir-rv-2',
+      queue: RABBITMQ_QUEUE,
       queueOptions: {
         durable: true,
       },

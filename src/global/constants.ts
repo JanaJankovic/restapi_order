@@ -14,6 +14,7 @@ export const APPLICATION_NAME = 'order.service';
 
 export const RABBIT_MQ = 'amqp://localhost:5672';
 export const RABBITMQ_EXCHANGE = 'iir-2';
+export const RABBITMQ_QUEUE = 'iir-2';
 
 export const ARTICLE_ENDPOINTS = {
   articlesById: '/articles/list',
