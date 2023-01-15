@@ -12,7 +12,7 @@ export const NOTIFICATION_SERVICE =
 export const CURRENT_PORT = 3000;
 export const APPLICATION_NAME = 'order.service';
 
-export const RABBIT_MQ = 'amqp://guest:guest@localhost:5672';
+export const RABBIT_MQ = 'amqp://localhost:5672';
 export const RABBITMQ_EXCHANGE = 'iir-2';
 export const RABBITMQ_QUEUE = 'iir-2';
 

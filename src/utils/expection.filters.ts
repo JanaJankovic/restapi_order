@@ -7,8 +7,10 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { MongoError } from 'mongodb';
-import { RabbitMQService } from 'src/services/rabbitmq.service';
 import { v4 } from 'uuid';
+import { Connection } from 'amqplib';
+import { Utils } from './utils';
+import { MessageService } from 'src/services/message.service';
 
 @Catch()
 export class BadRequestFilter implements ExceptionFilter {
@@ -33,7 +35,7 @@ export class MongoFilter implements ExceptionFilter {
 @Catch()
 @Injectable()
 export class NetworkExceptionFilter {
-  constructor(private publisher: RabbitMQService) {}
+  constructor(private messageService: MessageService) {}
 
   catch(exception: HttpException, host) {
     const ctx = host.switchToHttp();
@@ -51,15 +53,10 @@ export class NetworkExceptionFilter {
       message: exception.message || null,
     };
 
-    this.publisher.publish(
-      '',
-      this.publisher.createMessage(
-        v4(),
-        request.url,
-        'ERROR',
-        exception.message,
-      ),
+    this.messageService.sendMessage(
+      Utils.createMessage(v4(), request.url, 'ERROR', exception.message),
     );
+
     response.status(status).json(errorResponse);
   }
 }

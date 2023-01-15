@@ -6,15 +6,16 @@ import { ItemCreateDto, ItemGetDto, ItemUpdateDto } from 'src/models/item.dto';
 import { MessageDto } from 'src/models/message.dto';
 import { NetworkService } from './network.service';
 import { ArticleDto } from 'src/models/article.dto';
-import { RabbitMQService } from './rabbitmq.service';
 import { v4 } from 'uuid';
+import { MessageService } from './message.service';
+import { Utils } from 'src/utils/utils';
 
 @Injectable()
 export class ItemService {
   constructor(
     @InjectModel(Item.name) private itemRepo: Model<ItemDocument>,
     private networkService: NetworkService,
-    private publisher: RabbitMQService,
+    private messageService: MessageService,
   ) {}
 
   async findItemsByOrderId(
@@ -30,7 +31,15 @@ export class ItemService {
 
         const itemsDto: ItemGetDto[] = [];
         if (items.length == 0) {
-          //publish
+          this.messageService.sendMessage(
+            Utils.createMessage(
+              correlationId,
+              url + '/' + order_id,
+              'INFO',
+              `No items found for given id ${order_id}`,
+            ),
+          );
+
           return;
         }
 
@@ -80,8 +89,14 @@ export class ItemService {
           itemsDto.push(itemDto);
         });
 
-        //publish
-
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            url,
+            'INFO',
+            `For given order id found ${itemsDto.length} items`,
+          ),
+        );
         return itemsDto;
       });
   }
@@ -108,8 +123,9 @@ export class ItemService {
 
     const item = new this.itemRepo(itemDto);
 
-    //publish
-
+    this.messageService.sendMessage(
+      Utils.createMessage(correlationId, url, 'INFO', 'Created new item'),
+    );
     return item.save();
   }
 
@@ -130,7 +146,9 @@ export class ItemService {
         quantity: itemDto.quantity,
       });
 
-      //publish
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, url, 'INFO', 'Updated the item'),
+      );
 
       return <MessageDto>{
         content: 'Successfully updated',
@@ -139,7 +157,14 @@ export class ItemService {
       };
     }
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        url,
+        'WARN',
+        'Not updated: item not found, total quantity exeeded or unknown',
+      ),
+    );
 
     return <MessageDto>{
       content: 'Not updated: item not found, total quantity exeeded or unknown',
@@ -162,7 +187,9 @@ export class ItemService {
         ? 'Deleted successfully'
         : 'Error occured';
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
+    );
 
     return <MessageDto>{ content: content, error: err };
   }
@@ -177,7 +204,9 @@ export class ItemService {
         ? 'Deleted successfully'
         : 'Error occured';
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
+    );
 
     return <MessageDto>{ content: content, error: err };
   }

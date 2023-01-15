@@ -7,8 +7,9 @@ import { Order, OrderDocument } from 'src/schema/order.schema';
 import { NetworkService } from './network.service';
 import { ItemService } from './item.service';
 import { TotalDto } from 'src/models/total.dto';
-import { RabbitMQService } from './rabbitmq.service';
 import { v4 } from 'uuid';
+import { MessageService } from './message.service';
+import { Utils } from 'src/utils/utils';
 
 @Injectable()
 export class OrderService {
@@ -16,7 +17,7 @@ export class OrderService {
     @InjectModel(Order.name) private orderRepo: Model<OrderDocument>,
     private networkService: NetworkService,
     private itemService: ItemService,
-    private publisher: RabbitMQService,
+    private messageService: MessageService,
   ) {}
 
   async getUserOrders(url: string, id: string): Promise<OrderGetDto[]> {
@@ -43,7 +44,14 @@ export class OrderService {
       };
       order.items = items;
 
-      //publish
+      this.messageService.sendMessage(
+        Utils.createMessage(
+          correlationId,
+          url,
+          'INFO',
+          `Found user order with ${order.items.length} items`,
+        ),
+      );
       return order;
     });
 
@@ -71,7 +79,15 @@ export class OrderService {
       };
       order.items = items;
 
-      //publish
+      this.messageService.sendMessage(
+        Utils.createMessage(
+          correlationId,
+          url,
+          'INFO',
+          `Found guest order with ${order.items.length} items`,
+        ),
+      );
+
       return order;
     });
 
@@ -100,7 +116,15 @@ export class OrderService {
         total += item.article.price * item.quantity;
       });
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        url,
+        'INFO',
+        `Found total for order: ${total}`,
+      ),
+    );
+
     return <TotalDto>{ order_id: id, totalAmount: total };
   }
 
@@ -114,12 +138,16 @@ export class OrderService {
       const order = new this.orderRepo(orderDto);
       order.completed = false;
 
-      //publish
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, url, 'INFO', 'Created new order'),
+      );
 
       return order.save();
     }
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(correlationId, url, 'WARN', 'Order exists'),
+    );
 
     return orderExists;
   }
@@ -129,7 +157,9 @@ export class OrderService {
 
     const order = await this.orderRepo.findOne({ _id: id }).exec();
     if (order == undefined) {
-      //publish
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, url, 'WARN', 'Order not found'),
+      );
 
       return <MessageDto>{
         content: 'Order not found',
@@ -153,7 +183,14 @@ export class OrderService {
 
       if (res.error != undefined && res.error == true) {
         content += 'Item: ' + item.article.title + ' invenvtory not updated';
-        //publish
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            url,
+            'WARN',
+            `Item ${item.article.title} invenvtory not updated`,
+          ),
+        );
       }
     });
 
@@ -164,7 +201,9 @@ export class OrderService {
       },
     );
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(correlationId, url, 'INFO', 'Order completed'),
+    );
 
     return <MessageDto>{
       content: 'Order completed. ' + content,
@@ -180,14 +219,23 @@ export class OrderService {
     const itemsNotFound = res == undefined || res.deletedCount == 0;
     const items = itemsNotFound ? ' Items not found.' : ' Items deleted.';
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        url,
+        itemsNotFound ? 'WARN' : 'INFO',
+        items,
+      ),
+    );
 
     const resp: any = await this.orderRepo.deleteOne({ _id: id });
 
     const err = resp != undefined && resp.deletedCount != undefined;
     const content = err ? 'Deleted successfully.' + items : 'Error occured';
 
-    //publish
+    this.messageService.sendMessage(
+      Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
+    );
 
     return <MessageDto>{ content: content, error: err };
   }
