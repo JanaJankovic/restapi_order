@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { MongoError } from 'mongodb';
 import { v4 } from 'uuid';
-import { Connection } from 'amqplib';
 import { Utils } from './utils';
 import { MessageService } from 'src/services/message.service';
 
