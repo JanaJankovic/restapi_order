@@ -97,6 +97,9 @@ export class ItemService {
             `For given order id found ${itemsDto.length} items`,
           ),
         );
+
+        await this.networkService.updateStats('/item/:order_id');
+
         return itemsDto;
       });
   }
@@ -126,11 +129,16 @@ export class ItemService {
     this.messageService.sendMessage(
       Utils.createMessage(correlationId, url, 'INFO', 'Created new item'),
     );
+
+    await this.networkService.updateStats('post/item');
+
     return item.save();
   }
 
   async updateItem(url: string, itemDto: ItemUpdateDto): Promise<MessageDto> {
     const correlationId = v4();
+
+    await this.networkService.updateStats('put/item');
 
     const totalQuantity: number = await this.networkService.getTotalQuantity(
       itemDto.article_id,
@@ -191,6 +199,8 @@ export class ItemService {
       Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
     );
 
+    await this.networkService.updateStats('/item/empty-cart/:order_id');
+
     return <MessageDto>{ content: content, error: err };
   }
 
@@ -207,6 +217,8 @@ export class ItemService {
     this.messageService.sendMessage(
       Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
     );
+
+    await this.networkService.updateStats('/item/:item_id');
 
     return <MessageDto>{ content: content, error: err };
   }
@@ -229,6 +241,8 @@ export class ItemService {
         'Successfully retrieved articles count',
       ),
     );
+
+    await this.networkService.updateStats('/item/articles-count');
 
     return resp;
   }
@@ -253,6 +267,8 @@ export class ItemService {
         'Successfully retrieved article count by id',
       ),
     );
+
+    await this.networkService.updateStats('/item/articles-count/:id');
 
     return resp;
   }

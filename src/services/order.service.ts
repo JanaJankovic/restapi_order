@@ -55,6 +55,8 @@ export class OrderService {
       return order;
     });
 
+    await this.networkService.updateStats('/order/:user_id');
+
     orders = await Promise.all(promises);
     return orders;
   }
@@ -91,6 +93,8 @@ export class OrderService {
       return order;
     });
 
+    await this.networkService.updateStats('/order/:session_id');
+
     orders = await Promise.all(promises);
     return orders;
   }
@@ -125,11 +129,15 @@ export class OrderService {
       ),
     );
 
+    await this.networkService.updateStats('/order/totalAmount/:order_id');
+
     return <TotalDto>{ order_id: id, totalAmount: total };
   }
 
   async createOrder(url: string, orderDto: OrderCreateDto): Promise<Order> {
     const correlationId = v4();
+
+    await this.networkService.updateStats('/order');
 
     const orderExists = await this.orderRepo
       .findOne({ session_id: orderDto.session_id })
@@ -205,6 +213,8 @@ export class OrderService {
       Utils.createMessage(correlationId, url, 'INFO', 'Order completed'),
     );
 
+    await this.networkService.updateStats('/order/complete/:order_id');
+
     return <MessageDto>{
       content: 'Order completed. ' + content,
       error: false,
@@ -236,6 +246,8 @@ export class OrderService {
     this.messageService.sendMessage(
       Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
     );
+
+    await this.networkService.updateStats('/order/:order_id');
 
     return <MessageDto>{ content: content, error: err };
   }

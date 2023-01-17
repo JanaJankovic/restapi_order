@@ -4,6 +4,7 @@ import {
   ARTICLE_SERVICE_URL,
   INVENTORY_ENDPOINTS,
   INVETORY_SERVICE_URL,
+  STATS_ENDPOINT,
 } from 'src/global/constants';
 import { map, catchError } from 'rxjs';
 import { Injectable } from '@nestjs/common';
@@ -91,6 +92,23 @@ export class NetworkService {
           quantity: quantity,
           correlationId: correlationId,
         })
+        .pipe(
+          map((res): any => {
+            return res.data;
+          }),
+        )
+        .pipe(
+          catchError((err) => {
+            throw err;
+          }),
+        ),
+    );
+  }
+
+  async updateStats(url: string) {
+    return await lastValueFrom(
+      this.httpService
+        .post(STATS_ENDPOINT, { url: url })
         .pipe(
           map((res): any => {
             return res.data;
