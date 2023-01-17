@@ -34,7 +34,7 @@ export class ItemService {
           this.messageService.sendMessage(
             Utils.createMessage(
               correlationId,
-              url + '/' + order_id,
+              '/item/' + order_id,
               'INFO',
               `No items found for given id ${order_id}`,
             ),
@@ -92,7 +92,7 @@ export class ItemService {
         this.messageService.sendMessage(
           Utils.createMessage(
             correlationId,
-            url,
+            '/item/' + order_id,
             'INFO',
             `For given order id found ${itemsDto.length} items`,
           ),
@@ -127,7 +127,7 @@ export class ItemService {
     const item = new this.itemRepo(itemDto);
 
     this.messageService.sendMessage(
-      Utils.createMessage(correlationId, url, 'INFO', 'Created new item'),
+      Utils.createMessage(correlationId, '/item', 'INFO', 'Created new item'),
     );
 
     await this.networkService.updateStats('post/item');
@@ -155,7 +155,7 @@ export class ItemService {
       });
 
       this.messageService.sendMessage(
-        Utils.createMessage(correlationId, url, 'INFO', 'Updated the item'),
+        Utils.createMessage(correlationId, '/item', 'INFO', 'Updated the item'),
       );
 
       return <MessageDto>{
@@ -168,7 +168,7 @@ export class ItemService {
     this.messageService.sendMessage(
       Utils.createMessage(
         correlationId,
-        url,
+        '/item',
         'WARN',
         'Not updated: item not found, total quantity exeeded or unknown',
       ),
@@ -196,7 +196,12 @@ export class ItemService {
         : 'Error occured';
 
     this.messageService.sendMessage(
-      Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
+      Utils.createMessage(
+        correlationId,
+        '/item/empty-cart/' + order_id,
+        err ? 'INFO' : 'ERROR',
+        content,
+      ),
     );
 
     await this.networkService.updateStats('/item/empty-cart/:order_id');
@@ -215,7 +220,12 @@ export class ItemService {
         : 'Error occured';
 
     this.messageService.sendMessage(
-      Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
+      Utils.createMessage(
+        correlationId,
+        '/item/' + item_id,
+        err ? 'INFO' : 'ERROR',
+        content,
+      ),
     );
 
     await this.networkService.updateStats('/item/:item_id');
@@ -236,7 +246,7 @@ export class ItemService {
     this.messageService.sendMessage(
       Utils.createMessage(
         correlationId,
-        url,
+        '/item/articles-count',
         'INFO',
         'Successfully retrieved articles count',
       ),
@@ -262,7 +272,7 @@ export class ItemService {
     this.messageService.sendMessage(
       Utils.createMessage(
         correlationId,
-        url,
+        '/item/articles-count/' + article_id,
         'INFO',
         'Successfully retrieved article count by id',
       ),

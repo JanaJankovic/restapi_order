@@ -47,7 +47,7 @@ export class OrderService {
       this.messageService.sendMessage(
         Utils.createMessage(
           correlationId,
-          url,
+          '/order/:user_id',
           'INFO',
           `Found user order with ${order.items.length} items`,
         ),
@@ -84,7 +84,7 @@ export class OrderService {
       this.messageService.sendMessage(
         Utils.createMessage(
           correlationId,
-          url,
+          '/order/:session_id',
           'INFO',
           `Found guest order with ${order.items.length} items`,
         ),
@@ -123,7 +123,7 @@ export class OrderService {
     this.messageService.sendMessage(
       Utils.createMessage(
         correlationId,
-        url,
+        '/order/totalAmount/:order_id',
         'INFO',
         `Found total for order: ${total}`,
       ),
@@ -147,14 +147,19 @@ export class OrderService {
       order.completed = false;
 
       this.messageService.sendMessage(
-        Utils.createMessage(correlationId, url, 'INFO', 'Created new order'),
+        Utils.createMessage(
+          correlationId,
+          '/order',
+          'INFO',
+          'Created new order',
+        ),
       );
 
       return order.save();
     }
 
     this.messageService.sendMessage(
-      Utils.createMessage(correlationId, url, 'WARN', 'Order exists'),
+      Utils.createMessage(correlationId, '/order', 'WARN', 'Order exists'),
     );
 
     return orderExists;
@@ -166,7 +171,12 @@ export class OrderService {
     const order = await this.orderRepo.findOne({ _id: id }).exec();
     if (order == undefined) {
       this.messageService.sendMessage(
-        Utils.createMessage(correlationId, url, 'WARN', 'Order not found'),
+        Utils.createMessage(
+          correlationId,
+          '/order/complete/:order_id',
+          'WARN',
+          'Order not found',
+        ),
       );
 
       return <MessageDto>{
@@ -194,7 +204,7 @@ export class OrderService {
         this.messageService.sendMessage(
           Utils.createMessage(
             correlationId,
-            url,
+            '/order/complete/:order_id',
             'WARN',
             `Item ${item.article.title} invenvtory not updated`,
           ),
@@ -210,7 +220,12 @@ export class OrderService {
     );
 
     this.messageService.sendMessage(
-      Utils.createMessage(correlationId, url, 'INFO', 'Order completed'),
+      Utils.createMessage(
+        correlationId,
+        '/order/complete/:order_id',
+        'INFO',
+        'Order completed',
+      ),
     );
 
     await this.networkService.updateStats('/order/complete/:order_id');
@@ -232,7 +247,7 @@ export class OrderService {
     this.messageService.sendMessage(
       Utils.createMessage(
         correlationId,
-        url,
+        '/order/:order_id',
         itemsNotFound ? 'WARN' : 'INFO',
         items,
       ),
@@ -244,7 +259,12 @@ export class OrderService {
     const content = err ? 'Deleted successfully.' + items : 'Error occured';
 
     this.messageService.sendMessage(
-      Utils.createMessage(correlationId, url, err ? 'INFO' : 'ERROR', content),
+      Utils.createMessage(
+        correlationId,
+        '/order/:order_id',
+        err ? 'INFO' : 'ERROR',
+        content,
+      ),
     );
 
     await this.networkService.updateStats('/order/:order_id');
