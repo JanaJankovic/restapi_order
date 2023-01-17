@@ -86,7 +86,9 @@ export class OrderService {
           correlationId,
           '/order/:session_id',
           'INFO',
-          `Found guest order with ${order.items.length} items`,
+          `Found guest order with ${
+            order.items != undefined ? order.items.length : 0
+          } items`,
         ),
       );
 
