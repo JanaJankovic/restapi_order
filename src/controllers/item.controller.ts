@@ -56,4 +56,23 @@ export class ItemController {
   async deleteItem(@Request() req, @Param() params): Promise<MessageDto> {
     return await this.dbService.deleteItem(req.url, params.id);
   }
+
+  @UseFilters(new MongoFilter(), new BadRequestFilter())
+  @Post('articles-count')
+  async getArticlesOccurances(
+    @Request() req,
+    @Body() body: any,
+  ): Promise<Array<{ article_id: number }>> {
+    return await this.dbService.getArticlesOccurances(req.url, body);
+  }
+
+  @UseFilters(new MongoFilter(), new BadRequestFilter())
+  @Post('articles-count/:id')
+  async getArticleOccurances(
+    @Request() req,
+    @Param() params,
+    @Body() body: any,
+  ): Promise<Array<{ article_id: number }>> {
+    return await this.dbService.getArticleOccurances(req.url, params.id, body);
+  }
 }

@@ -210,4 +210,50 @@ export class ItemService {
 
     return <MessageDto>{ content: content, error: err };
   }
+
+  async getArticlesOccurances(
+    url: string,
+    body: any,
+  ): Promise<Array<{ article_id: number }>> {
+    const correlationId = body.cId == undefined ? v4() : body.cId;
+    const resp = await this.itemRepo.aggregate([
+      { $group: { _id: '$article_id', count: { $sum: 1 } } },
+      { $project: { _id: 0, article_id: '$_id', count: 1 } },
+    ]);
+
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        url,
+        'INFO',
+        'Successfully retrieved articles count',
+      ),
+    );
+
+    return resp;
+  }
+
+  async getArticleOccurances(
+    url: string,
+    article_id: string,
+    body: any,
+  ): Promise<Array<{ article_id: number }>> {
+    const correlationId = body.cId == undefined ? v4() : body.cId;
+    const resp = await this.itemRepo.aggregate([
+      { $match: { article_id: article_id } },
+      { $group: { _id: '$article_id', count: { $sum: 1 } } },
+      { $project: { _id: 0, article_id: '$_id', count: 1 } },
+    ]);
+
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        url,
+        'INFO',
+        'Successfully retrieved article count by id',
+      ),
+    );
+
+    return resp;
+  }
 }
