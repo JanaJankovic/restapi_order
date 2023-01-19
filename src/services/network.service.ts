@@ -1,11 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import {
-  ARTICLE_ENDPOINTS,
-  ARTICLE_SERVICE_URL,
-  INVENTORY_ENDPOINTS,
-  INVETORY_SERVICE_URL,
-  STATS_ENDPOINT,
-} from 'src/global/constants';
+import { ARTICLE_ENDPOINTS, INVENTORY_ENDPOINTS } from 'src/global/constants';
 import { map, catchError } from 'rxjs';
 import { Injectable } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
@@ -20,10 +14,13 @@ export class NetworkService {
   ): Promise<any> {
     return await lastValueFrom(
       this.httpService
-        .post(ARTICLE_SERVICE_URL + ARTICLE_ENDPOINTS.articlesById, {
-          data: ids,
-          correlationId: correlationId,
-        })
+        .post(
+          process.env.ARTICLE_SERVICE_URL + ARTICLE_ENDPOINTS.articlesById,
+          {
+            data: ids,
+            correlationId: correlationId,
+          },
+        )
         .pipe(
           map((res) => {
             return res.data;
@@ -43,10 +40,13 @@ export class NetworkService {
   ): Promise<any> {
     return await lastValueFrom(
       this.httpService
-        .post(INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getInventories, {
-          data: ids,
-          correlationId: correlationId,
-        })
+        .post(
+          process.env.INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getInventories,
+          {
+            data: ids,
+            correlationId: correlationId,
+          },
+        )
         .pipe(
           map((res): any => {
             return res.data;
@@ -64,7 +64,9 @@ export class NetworkService {
     return await lastValueFrom(
       this.httpService
         .post(
-          INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.getTotalQuantity + id,
+          process.env.INVETORY_SERVICE_URL +
+            INVENTORY_ENDPOINTS.getTotalQuantity +
+            id,
           { correlationId: correlationId },
         )
         .pipe(
@@ -87,11 +89,15 @@ export class NetworkService {
   ): Promise<any> {
     return await lastValueFrom(
       this.httpService
-        .put(INVETORY_SERVICE_URL + INVENTORY_ENDPOINTS.decrementQuantity, {
-          articleId: article_id,
-          quantity: quantity,
-          correlationId: correlationId,
-        })
+        .put(
+          process.env.INVETORY_SERVICE_URL +
+            INVENTORY_ENDPOINTS.decrementQuantity,
+          {
+            articleId: article_id,
+            quantity: quantity,
+            correlationId: correlationId,
+          },
+        )
         .pipe(
           map((res): any => {
             return res.data;
@@ -108,7 +114,7 @@ export class NetworkService {
   async updateStats(url: string) {
     return await lastValueFrom(
       this.httpService
-        .post(STATS_ENDPOINT, { url: url })
+        .post(process.env.STATS_ENDPOINT, { url: url })
         .pipe(
           map((res): any => {
             return res.data;

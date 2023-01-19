@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { CURRENT_PORT } from './global/constants';
 import { BadRequestFilter, MongoFilter } from './utils/expection.filters';
 
 async function bootstrap() {
@@ -19,6 +18,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   app.useGlobalFilters(new MongoFilter(), new BadRequestFilter());
-  await app.listen(CURRENT_PORT);
+  await app.listen(process.env.PORT);
 }
 bootstrap();

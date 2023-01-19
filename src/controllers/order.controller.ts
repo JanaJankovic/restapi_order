@@ -41,11 +41,8 @@ export class OrderController {
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
-  async createOne(
-    @Request() req,
-    @Body() body: OrderCreateDto,
-  ): Promise<Order> {
-    return await this.dbService.createOrder(req.url, body);
+  async createOne(@Body() body: OrderCreateDto): Promise<Order> {
+    return await this.dbService.createOrder(body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())

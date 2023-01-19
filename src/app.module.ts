@@ -3,7 +3,6 @@ import { OrderController } from './controllers/order.controller';
 import { ItemService } from './services/item.service';
 import { OrderService } from './services/order.service';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MONGO_CONNECTION_STRING, RABBIT_MQ } from './global/constants';
 import { Item, ItemSchema } from './schema/item.schema';
 import { Order, OrderSchema } from './schema/order.schema';
 import { HttpModule } from '@nestjs/axios';
@@ -14,6 +13,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 import { Connection, connect } from 'amqplib';
 import { MessageService } from './services/message.service';
+import { MONGO_CONNECTION_STRING } from './global/constants';
 
 @Module({
   imports: [
@@ -31,7 +31,7 @@ import { MessageService } from './services/message.service';
     },
     {
       provide: 'CONNECTION',
-      useFactory: async () => await connect(RABBIT_MQ),
+      useFactory: async () => await connect(process.env.RABBIT_MQ),
     },
     {
       provide: 'CHANNEL',

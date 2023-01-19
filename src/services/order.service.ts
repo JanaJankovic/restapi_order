@@ -136,14 +136,14 @@ export class OrderService {
     return <TotalDto>{ order_id: id, totalAmount: total };
   }
 
-  async createOrder(url: string, orderDto: OrderCreateDto): Promise<Order> {
+  async createOrder(orderDto: OrderCreateDto): Promise<Order> {
     const correlationId = v4();
 
     await this.networkService.updateStats('/order');
-
     const orderExists = await this.orderRepo
       .findOne({ session_id: orderDto.session_id })
       .exec();
+
     if (orderExists == undefined || orderExists == null) {
       const order = new this.orderRepo(orderDto);
       order.completed = false;
