@@ -34,9 +34,9 @@ export class OrderController {
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
-  @Get('totalAmount/:id')
+  @Post('totalAmount/:id')
   async getTotalAmount(@Request() req, @Param() params): Promise<TotalDto> {
-    return await this.dbService.getTotalAmount(req.url, params.id);
+    return await this.dbService.getTotalAmount(req.url, req.body, params.id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())

@@ -101,8 +101,8 @@ export class OrderService {
     return orders;
   }
 
-  async getTotalAmount(url: string, id: string): Promise<TotalDto> {
-    const correlationId = v4();
+  async getTotalAmount(url: string, body: any, id: string): Promise<TotalDto> {
+    const correlationId = body.correlationId == undefined ? v4() : body.correlationId;
 
     const order = await this.orderRepo.findOne({ _id: id }).exec();
     if (order == undefined)
