@@ -1,8 +1,16 @@
 import { HttpService } from '@nestjs/axios';
-import { ARTICLE_ENDPOINTS, INVENTORY_ENDPOINTS } from 'src/global/constants';
+import {
+  ARTICLE_ENDPOINTS,
+  AUTH_ENDPOINTS,
+  INVENTORY_ENDPOINTS,
+  PAYMENT_ENDPOINTS,
+} from 'src/global/constants';
 import { map, catchError } from 'rxjs';
 import { Injectable } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
+import { UserVerificationDto } from 'src/models/user.dto';
+import { MessageDto } from 'src/models/message.dto';
+import { stringify } from 'querystring';
 
 @Injectable()
 export class NetworkService {
@@ -115,6 +123,82 @@ export class NetworkService {
     return await lastValueFrom(
       this.httpService
         .post(process.env.STATS_ENDPOINT, { url: url })
+        .pipe(
+          map((res): any => {
+            return res.data;
+          }),
+        )
+        .pipe(
+          catchError((err) => {
+            throw err;
+          }),
+        ),
+    );
+  }
+
+  async verifyUser(headers, correlationId?: string): Promise<any> {
+    return await lastValueFrom(
+      this.httpService
+        .post(
+          process.env.AUTH_SERVICE_URL + AUTH_ENDPOINTS.postVerifyUser,
+          { correlationId: correlationId },
+          { headers: headers },
+        )
+        .pipe(
+          map((res): any => {
+            return res.data;
+          }),
+        )
+        .pipe(
+          catchError((err) => {
+            throw err;
+          }),
+        ),
+    );
+  }
+
+  async getCardByUserId(
+    headers,
+    id: string,
+    correlationId?: string,
+  ): Promise<any> {
+    return await lastValueFrom(
+      this.httpService
+        .post(
+          process.env.PAYMENT_SERVICE_URL + PAYMENT_ENDPOINTS.postCardUser + id,
+          { correlationId: correlationId },
+          { headers: headers },
+        )
+        .pipe(
+          map((res): any => {
+            return res.data;
+          }),
+        )
+        .pipe(
+          catchError((err) => {
+            throw err;
+          }),
+        ),
+    );
+  }
+
+  async postTransaction(
+    headers,
+    card_id: string,
+    order_id: string,
+    correlationId?: string,
+  ): Promise<any> {
+    return await lastValueFrom(
+      this.httpService
+        .post(
+          process.env.PAYMENT_SERVICE_URL + PAYMENT_ENDPOINTS.postTransactions,
+          {
+            card_id: card_id,
+            order_id: order_id,
+            correlationId: correlationId,
+          },
+          { headers: headers },
+        )
         .pipe(
           map((res): any => {
             return res.data;

@@ -15,4 +15,13 @@ export const INVENTORY_ENDPOINTS = {
   decrementQuantity: '/inventories/purchased',
 };
 
+export const AUTH_ENDPOINTS = {
+  postVerifyUser: '/verify',
+};
+
+export const PAYMENT_ENDPOINTS = {
+  postCardUser: '/card/user/',
+  postTransactions: '/transactions',
+};
+
 export const DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';

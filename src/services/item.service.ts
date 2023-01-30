@@ -9,17 +9,20 @@ import { ArticleDto } from 'src/models/article.dto';
 import { v4 } from 'uuid';
 import { MessageService } from './message.service';
 import { Utils } from 'src/utils/utils';
+import { OrderService } from './order.service';
+import { Order, OrderDocument } from 'src/schema/order.schema';
 
 @Injectable()
 export class ItemService {
   constructor(
-    @InjectModel(Item.name) private itemRepo: Model<ItemDocument>,
+    @InjectModel(Item.name)
+    private itemRepo: Model<ItemDocument>,
+    @InjectModel(Order.name) private orderRepo: Model<OrderDocument>,
     private networkService: NetworkService,
     private messageService: MessageService,
   ) {}
 
   async findItemsByOrderId(
-    url: string,
     order_id: string,
     cId?: string,
   ): Promise<ItemGetDto[]> {
@@ -98,24 +101,48 @@ export class ItemService {
           ),
         );
 
-        await this.networkService.updateStats('/item/:order_id');
+        this.networkService.updateStats('/item/:order_id');
 
         return itemsDto;
       });
   }
 
   async createItem(
-    url: string,
+    headers,
     itemDto: ItemCreateDto,
   ): Promise<Item | MessageDto> {
+    this.networkService.updateStats('post/item');
+
     const correlationId = v4();
+
+    const order = await this.orderRepo.findOne({ _id: itemDto.order_id });
+    if (order.user_id != undefined) {
+      const user = await this.networkService.verifyUser(headers, correlationId);
+      if (user == undefined || user == null || user?.error == true) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/item',
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+    }
+
     const itemExists = await this.itemRepo
       .find({ order_id: itemDto.order_id, article_id: itemDto.article_id })
       .exec();
     if (itemExists != undefined && itemExists.length > 0) {
       itemDto.quantity = itemExists[0].quantity + 1;
       return this.updateItem(
-        url,
+        headers,
         new ItemUpdateDto(
           itemExists[0]._id,
           itemDto.quantity,
@@ -130,15 +157,59 @@ export class ItemService {
       Utils.createMessage(correlationId, '/item', 'INFO', 'Created new item'),
     );
 
-    await this.networkService.updateStats('post/item');
-
     return item.save();
   }
 
-  async updateItem(url: string, itemDto: ItemUpdateDto): Promise<MessageDto> {
+  async updateItem(headers, itemDto: ItemUpdateDto): Promise<MessageDto> {
+    this.networkService.updateStats('put/item');
+
     const correlationId = v4();
 
-    await this.networkService.updateStats('put/item');
+    const item = await this.itemRepo.findOne({ _id: itemDto._id });
+    if (item == undefined || item == null) {
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, '/item', 'WARN', 'Item not found'),
+      );
+
+      return <MessageDto>{
+        content: 'Item not found',
+        error: true,
+        status: 404,
+      };
+    }
+
+    const order = await this.orderRepo.findOne({ _id: item.order_id });
+    if (order == undefined || order == null) {
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, '/item', 'WARN', 'Order not found'),
+      );
+
+      return <MessageDto>{
+        content: 'Order not found',
+        error: true,
+        status: 404,
+      };
+    }
+
+    if (order.user_id != undefined) {
+      const user = await this.networkService.verifyUser(headers, correlationId);
+      if (user == undefined || user == null || user?.error == true) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/item',
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+    }
 
     const totalQuantity: number = await this.networkService.getTotalQuantity(
       itemDto.article_id,
@@ -181,11 +252,9 @@ export class ItemService {
     };
   }
 
-  async deleteMany(
-    url: string,
-    order_id: string,
-    cId?: string,
-  ): Promise<MessageDto> {
+  async deleteMany(order_id: string, cId?: string): Promise<MessageDto> {
+    this.networkService.updateStats('/item/empty-cart/:order_id');
+
     const correlationId = cId == undefined ? v4() : cId;
 
     const resp: any = await this.itemRepo.deleteMany({ order_id: order_id });
@@ -204,13 +273,59 @@ export class ItemService {
       ),
     );
 
-    await this.networkService.updateStats('/item/empty-cart/:order_id');
-
     return <MessageDto>{ content: content, error: err };
   }
 
-  async deleteItem(url: string, item_id: string): Promise<MessageDto> {
+  async deleteItem(headers, item_id: string): Promise<MessageDto> {
+    this.networkService.updateStats('/item/:item_id');
+
     const correlationId = v4();
+
+    const item = await this.itemRepo.findOne({ _id: item_id });
+    if (item == undefined || item == null) {
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, '/item', 'WARN', 'Item not found'),
+      );
+
+      return <MessageDto>{
+        content: 'Item not found',
+        error: true,
+        status: 404,
+      };
+    }
+
+    const order = await this.orderRepo.findOne({ _id: item.order_id });
+    if (order == undefined || order == null) {
+      this.messageService.sendMessage(
+        Utils.createMessage(correlationId, '/item', 'WARN', 'Order not found'),
+      );
+
+      return <MessageDto>{
+        content: 'Order not found',
+        error: true,
+        status: 404,
+      };
+    }
+
+    if (order.user_id != undefined) {
+      const user = await this.networkService.verifyUser(headers, correlationId);
+      if (user == undefined || user == null || user?.error == true) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/item',
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+    }
 
     const resp: any = await this.itemRepo.deleteOne({ _id: item_id });
     const err = resp != undefined && resp.deletedCount != undefined;
@@ -228,15 +343,14 @@ export class ItemService {
       ),
     );
 
-    await this.networkService.updateStats('/item/:item_id');
-
     return <MessageDto>{ content: content, error: err };
   }
 
   async getArticlesOccurances(
-    url: string,
     body: any,
   ): Promise<Array<{ article_id: number }>> {
+    this.networkService.updateStats('/item/articles-count');
+
     const correlationId = body.cId == undefined ? v4() : body.cId;
     const resp = await this.itemRepo.aggregate([
       { $group: { _id: '$article_id', count: { $sum: 1 } } },
@@ -252,16 +366,15 @@ export class ItemService {
       ),
     );
 
-    await this.networkService.updateStats('/item/articles-count');
-
     return resp;
   }
 
   async getArticleOccurances(
-    url: string,
     article_id: string,
     body: any,
   ): Promise<Array<{ article_id: number }>> {
+    this.networkService.updateStats('/item/articles-count/:id');
+
     const correlationId = body.cId == undefined ? v4() : body.cId;
     const resp = await this.itemRepo.aggregate([
       { $match: { article_id: article_id } },
@@ -277,8 +390,6 @@ export class ItemService {
         'Successfully retrieved article count by id',
       ),
     );
-
-    await this.networkService.updateStats('/item/articles-count/:id');
 
     return resp;
   }

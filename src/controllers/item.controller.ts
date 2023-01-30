@@ -3,11 +3,11 @@ import {
   Get,
   Put,
   Delete,
-  Request,
   Body,
   Param,
   Post,
   UseFilters,
+  Headers,
 } from '@nestjs/common';
 import { ItemCreateDto, ItemGetDto, ItemUpdateDto } from 'src/models/item.dto';
 import { ItemService } from '../services/item.service';
@@ -23,56 +23,54 @@ export class ItemController {
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Get(':order_id')
-  async getItems(@Request() req, @Param() params): Promise<ItemGetDto[]> {
-    return await this.dbService.findItemsByOrderId(req.url, params.order_id);
+  async getItems(@Headers() headers, @Param() params): Promise<ItemGetDto[]> {
+    return await this.dbService.findItemsByOrderId(headers, params.order_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
   async createItem(
-    @Request() req,
+    @Headers() headers,
     @Body() body: ItemCreateDto,
   ): Promise<Item | MessageDto> {
-    return await this.dbService.createItem(req.url, body);
+    return await this.dbService.createItem(headers, body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Put('')
   async updateItem(
-    @Request() req,
+    @Headers() headers,
     @Body() body: ItemUpdateDto,
   ): Promise<MessageDto> {
-    return await this.dbService.updateItem(req.url, body);
+    return await this.dbService.updateItem(headers, body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete('empty-cart/:order_id')
-  async deleteMany(@Request() req, @Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteMany(req.url, params.order_id);
+  async deleteMany(@Headers() headers, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteMany(headers, params.order_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete(':id')
-  async deleteItem(@Request() req, @Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteItem(req.url, params.id);
+  async deleteItem(@Headers() headers, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteItem(headers, params.id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('articles-count')
   async getArticlesOccurances(
-    @Request() req,
     @Body() body: any,
   ): Promise<Array<{ article_id: number }>> {
-    return await this.dbService.getArticlesOccurances(req.url, body);
+    return await this.dbService.getArticlesOccurances(body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('articles-count/:id')
   async getArticleOccurances(
-    @Request() req,
     @Param() params,
     @Body() body: any,
   ): Promise<Array<{ article_id: number }>> {
-    return await this.dbService.getArticleOccurances(req.url, params.id, body);
+    return await this.dbService.getArticleOccurances(params.id, body);
   }
 }

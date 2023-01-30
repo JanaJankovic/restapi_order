@@ -20,8 +20,31 @@ export class OrderService {
     private messageService: MessageService,
   ) {}
 
-  async getUserOrders(url: string, id: string): Promise<OrderGetDto[]> {
+  async getUserOrders(
+    headers,
+    id: string,
+  ): Promise<OrderGetDto[] | MessageDto> {
+    this.networkService.updateStats('/order/:user_id');
+
     const correlationId = v4();
+
+    const user = await this.networkService.verifyUser(headers, correlationId);
+    if (user == undefined || user == null || user?.user?._id != id) {
+      this.messageService.sendMessage(
+        Utils.createMessage(
+          correlationId,
+          '/order/:user_id',
+          'WARN',
+          'User not found or not allowed',
+        ),
+      );
+
+      return <MessageDto>{
+        content: 'User not found or authenticated',
+        error: true,
+        status: 404,
+      };
+    }
 
     const all = await this.orderRepo
       .find({ user_id: id, completed: true })
@@ -31,7 +54,6 @@ export class OrderService {
     let orders: OrderGetDto[] = [];
     const promises = all.map(async (o) => {
       const items = await this.itemService.findItemsByOrderId(
-        url,
         o._id,
         correlationId,
       );
@@ -55,13 +77,13 @@ export class OrderService {
       return order;
     });
 
-    await this.networkService.updateStats('/order/:user_id');
-
     orders = await Promise.all(promises);
     return orders;
   }
 
-  async getGuestOrders(url: string, id: string): Promise<OrderGetDto[]> {
+  async getGuestOrders(id: string): Promise<OrderGetDto[]> {
+    this.networkService.updateStats('/order/:session_id');
+
     const correlationId = v4();
 
     const all = await this.orderRepo.find({ session_id: id }).exec();
@@ -69,7 +91,6 @@ export class OrderService {
     let orders: OrderGetDto[] = [];
     const promises = all.map(async (o) => {
       const items = await this.itemService.findItemsByOrderId(
-        url,
         o._id,
         correlationId,
       );
@@ -95,14 +116,15 @@ export class OrderService {
       return order;
     });
 
-    await this.networkService.updateStats('/order/:session_id');
-
     orders = await Promise.all(promises);
     return orders;
   }
 
-  async getTotalAmount(url: string, body: any, id: string): Promise<TotalDto> {
-    const correlationId = body.correlationId == undefined ? v4() : body.correlationId;
+  async getTotalAmount(body: any, id: string): Promise<TotalDto> {
+    this.networkService.updateStats('/order/totalAmount/:order_id');
+
+    const correlationId =
+      body.correlationId == undefined ? v4() : body.correlationId;
 
     const order = await this.orderRepo.findOne({ _id: id }).exec();
     if (order == undefined)
@@ -112,7 +134,6 @@ export class OrderService {
       };
 
     const items = await this.itemService.findItemsByOrderId(
-      url,
       order._id,
       correlationId,
     );
@@ -131,15 +152,37 @@ export class OrderService {
       ),
     );
 
-    await this.networkService.updateStats('/order/totalAmount/:order_id');
-
     return <TotalDto>{ order_id: id, totalAmount: total };
   }
 
-  async createOrder(orderDto: OrderCreateDto): Promise<Order> {
+  async createOrder(
+    headers,
+    orderDto: OrderCreateDto,
+  ): Promise<Order | MessageDto> {
+    this.networkService.updateStats('/order');
+
     const correlationId = v4();
 
-    await this.networkService.updateStats('/order');
+    if (orderDto?.user_id != undefined) {
+      const user = await this.networkService.verifyUser(headers, correlationId);
+      if (user == undefined || user == null || user?.error == true) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/order',
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+    }
+
     const orderExists = await this.orderRepo
       .findOne({ session_id: orderDto.session_id })
       .exec();
@@ -167,15 +210,17 @@ export class OrderService {
     return orderExists;
   }
 
-  async completeOrder(url: string, id: string): Promise<MessageDto> {
+  async completeOrder(headers, id: string): Promise<MessageDto> {
+    this.networkService.updateStats('/order/complete/:order_id');
+
     const correlationId = v4();
 
     const order = await this.orderRepo.findOne({ _id: id }).exec();
-    if (order == undefined) {
+    if (order == undefined || order == null) {
       this.messageService.sendMessage(
         Utils.createMessage(
           correlationId,
-          '/order/complete/:order_id',
+          '/order/complete/' + id,
           'WARN',
           'Order not found',
         ),
@@ -184,13 +229,83 @@ export class OrderService {
       return <MessageDto>{
         content: 'Order not found',
         error: true,
-        status: 500,
+        status: 404,
       };
+    }
+
+    if (order.user_id != undefined) {
+      const user = await this.networkService.verifyUser(headers, correlationId);
+      if (
+        user == undefined ||
+        user == null ||
+        user?.error == true ||
+        user?.user?._id == undefined
+      ) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/order/complete/' + id,
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+
+      const card = await this.networkService.getCardByUserId(
+        headers,
+        user?.user?._id,
+        correlationId,
+      );
+
+      if (card == undefined || card == null || card?._id == undefined) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/order/complete/' + id,
+            'WARN',
+            'Card not found',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'Card not found',
+          error: true,
+          status: 404,
+        };
+      }
+
+      const resp = await this.networkService.postTransaction(
+        headers,
+        card?._id,
+        id,
+        correlationId,
+      );
+      if (resp == undefined || resp == null || resp?.error == true) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/order/complete/' + id,
+            'WARN',
+            'Transaction failed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'Transaction failed',
+          error: true,
+          status: 500,
+        };
+      }
     }
 
     let content = '';
     const items = await this.itemService.findItemsByOrderId(
-      url,
       order._id,
       correlationId,
     );
@@ -206,7 +321,7 @@ export class OrderService {
         this.messageService.sendMessage(
           Utils.createMessage(
             correlationId,
-            '/order/complete/:order_id',
+            '/order/complete/' + id,
             'WARN',
             `Item ${item.article.title} invenvtory not updated`,
           ),
@@ -230,8 +345,6 @@ export class OrderService {
       ),
     );
 
-    await this.networkService.updateStats('/order/complete/:order_id');
-
     return <MessageDto>{
       content: 'Order completed. ' + content,
       error: false,
@@ -239,9 +352,55 @@ export class OrderService {
     };
   }
 
-  async deleteOrder(url: string, id: string): Promise<MessageDto> {
+  async deleteOrder(headers, id: string): Promise<MessageDto> {
+    this.networkService.updateStats('/order/:order_id');
+
     const correlationId = v4();
-    const res: any = await this.itemService.deleteMany(url, id, correlationId);
+
+    const order = await this.orderRepo.findOne({ _id: id });
+    if (order == null || order == undefined) {
+      this.messageService.sendMessage(
+        Utils.createMessage(
+          correlationId,
+          '/order/' + id,
+          'WARN',
+          'Order not found',
+        ),
+      );
+
+      return <MessageDto>{
+        content: 'Order not found',
+        error: true,
+        status: 404,
+      };
+    }
+
+    if (order.user_id != undefined) {
+      const user = await this.networkService.verifyUser(headers, correlationId);
+      if (
+        user == undefined ||
+        user == null ||
+        user?.error == true ||
+        user?.user?._id != order.user_id
+      ) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/order/' + id,
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+    }
+
+    const res: any = await this.itemService.deleteMany(id, correlationId);
 
     const itemsNotFound = res == undefined || res.deletedCount == 0;
     const items = itemsNotFound ? ' Items not found.' : ' Items deleted.';
@@ -268,8 +427,6 @@ export class OrderService {
         content,
       ),
     );
-
-    await this.networkService.updateStats('/order/:order_id');
 
     return <MessageDto>{ content: content, error: err };
   }
