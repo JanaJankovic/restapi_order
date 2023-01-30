@@ -33,7 +33,7 @@ export class OrderController {
   async getAllUser(
     @Headers() headers,
     @Param() params,
-  ): Promise<OrderGetDto[]> {
+  ): Promise<OrderGetDto[] | MessageDto> {
     return await this.dbService.getUserOrders(headers, params.user_id);
   }
 
@@ -48,7 +48,7 @@ export class OrderController {
   async createOne(
     @Headers() headers,
     @Body() body: OrderCreateDto,
-  ): Promise<Order> {
+  ): Promise<Order | MessageDto> {
     return await this.dbService.createOrder(headers, body);
   }
 

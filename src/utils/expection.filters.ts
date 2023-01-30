@@ -15,7 +15,7 @@ import { MessageService } from 'src/services/message.service';
 export class BadRequestFilter implements ExceptionFilter {
   catch(exception: Error, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
-    response.status(400).json({ message: exception.message });
+    response.status(400).json({ content: exception.message, error: true });
   }
 }
 
@@ -24,9 +24,11 @@ export class MongoFilter implements ExceptionFilter {
   catch(exception: MongoError, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
     if (exception.code === 11000) {
-      response.status(400).json({ message: 'User already exists.' });
+      response
+        .status(400)
+        .json({ content: 'User already exists.', error: true });
     } else {
-      response.status(500).json({ message: 'Internal error.' });
+      response.status(500).json({ content: 'Internal error.', error: true });
     }
   }
 }
@@ -49,7 +51,8 @@ export class NetworkExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: exception.message || null,
+      content: exception.message || null,
+      error: true,
     };
 
     this.messageService.sendMessage(
