@@ -136,13 +136,17 @@ export class NetworkService {
     );
   }
 
-  async verifyUser(headers, correlationId?: string): Promise<any> {
+  async verifyUser(token, correlationId?: string): Promise<any> {
     return await lastValueFrom(
       this.httpService
         .post(
           process.env.AUTH_SERVICE_URL + AUTH_ENDPOINTS.postVerifyUser,
           { correlationId: correlationId },
-          { headers: headers },
+          {
+            headers: {
+              Authorization: token,
+            },
+          },
         )
         .pipe(
           map((res): any => {
@@ -158,7 +162,7 @@ export class NetworkService {
   }
 
   async getCardByUserId(
-    headers,
+    token,
     id: string,
     correlationId?: string,
   ): Promise<any> {
@@ -167,7 +171,11 @@ export class NetworkService {
         .post(
           process.env.PAYMENT_SERVICE_URL + PAYMENT_ENDPOINTS.postCardUser + id,
           { correlationId: correlationId },
-          { headers: headers },
+          {
+            headers: {
+              Authorization: token,
+            },
+          },
         )
         .pipe(
           map((res): any => {
@@ -183,7 +191,7 @@ export class NetworkService {
   }
 
   async postTransaction(
-    headers,
+    token,
     card_id: string,
     order_id: string,
     correlationId?: string,
@@ -197,7 +205,11 @@ export class NetworkService {
             order_id: order_id,
             correlationId: correlationId,
           },
-          { headers: headers },
+          {
+            headers: {
+              Authorization: token,
+            },
+          },
         )
         .pipe(
           map((res): any => {

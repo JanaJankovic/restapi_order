@@ -7,7 +7,8 @@ import {
   Request,
   Body,
   UseFilters,
-  Headers,
+  Req,
+  Put,
 } from '@nestjs/common';
 import { OrderService } from '../services/order.service';
 import { ApiTags } from '@nestjs/swagger';
@@ -31,10 +32,10 @@ export class OrderController {
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Get('user/:user_id')
   async getAllUser(
-    @Headers() headers,
+    @Req() req,
     @Param() params,
   ): Promise<OrderGetDto[] | MessageDto> {
-    return await this.dbService.getUserOrders(headers, params.user_id);
+    return await this.dbService.getUserOrders(req, params.user_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
@@ -46,24 +47,31 @@ export class OrderController {
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
   async createOne(
-    @Headers() headers,
+    @Req() req,
     @Body() body: OrderCreateDto,
   ): Promise<Order | MessageDto> {
-    return await this.dbService.createOrder(headers, body);
+    return await this.dbService.createOrder(req, body);
+  }
+
+  @UseFilters(new MongoFilter(), new BadRequestFilter())
+  @Put(':id')
+  async updateOrder(
+    @Req() req,
+    @Body() body: OrderCreateDto,
+    @Param() params,
+  ): Promise<MessageDto> {
+    return await this.dbService.updateOrder(req, body, params.id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('complete/:id')
-  async completeOrder(
-    @Headers() headers,
-    @Param() params,
-  ): Promise<MessageDto> {
-    return await this.dbService.completeOrder(headers, params.id);
+  async completeOrder(@Req() req, @Param() params): Promise<MessageDto> {
+    return await this.dbService.completeOrder(req, params.id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete(':id')
-  async deleteOne(@Headers() headers, @Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteOrder(headers, params.id);
+  async deleteOne(@Req() req, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteOrder(req, params.id);
   }
 }

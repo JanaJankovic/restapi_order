@@ -20,15 +20,15 @@ export class OrderService {
     private messageService: MessageService,
   ) {}
 
-  async getUserOrders(
-    headers,
-    id: string,
-  ): Promise<OrderGetDto[] | MessageDto> {
+  async getUserOrders(req, id: string): Promise<OrderGetDto[] | MessageDto> {
     this.networkService.updateStats('/order/:user_id');
 
     const correlationId = v4();
 
-    const user = await this.networkService.verifyUser(headers, correlationId);
+    const user = await this.networkService.verifyUser(
+      req.headers?.authorization,
+      correlationId,
+    );
     if (user == undefined || user == null || user?.user?._id != id) {
       this.messageService.sendMessage(
         Utils.createMessage(
@@ -156,7 +156,7 @@ export class OrderService {
   }
 
   async createOrder(
-    headers,
+    req,
     orderDto: OrderCreateDto,
   ): Promise<Order | MessageDto> {
     this.networkService.updateStats('/order');
@@ -164,7 +164,10 @@ export class OrderService {
     const correlationId = v4();
 
     if (orderDto?.user_id != undefined) {
-      const user = await this.networkService.verifyUser(headers, correlationId);
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
       if (user == undefined || user == null || user?.error == true) {
         this.messageService.sendMessage(
           Utils.createMessage(
@@ -184,7 +187,12 @@ export class OrderService {
     }
 
     const orderExists = await this.orderRepo
-      .findOne({ session_id: orderDto.session_id })
+      .findOne({
+        $or: [
+          { session_id: orderDto.session_id },
+          { user_id: orderDto.user_id, completed: false },
+        ],
+      })
       .exec();
 
     if (orderExists == undefined || orderExists == null) {
@@ -210,7 +218,97 @@ export class OrderService {
     return orderExists;
   }
 
-  async completeOrder(headers, id: string): Promise<MessageDto> {
+  async updateOrder(
+    req,
+    orderDto: OrderCreateDto,
+    id: string,
+  ): Promise<MessageDto> {
+    this.networkService.updateStats('put/order/:order_id');
+    const correlationId = v4();
+
+    const order = await this.orderRepo.findOne({ _id: id }).exec();
+    if (order == undefined || order == null) {
+      this.messageService.sendMessage(
+        Utils.createMessage(
+          correlationId,
+          '/order/complete/' + id,
+          'WARN',
+          'Order not found',
+        ),
+      );
+
+      return <MessageDto>{
+        content: 'Order not found',
+        error: true,
+        status: 404,
+      };
+    }
+
+    if (orderDto?.user_id != undefined) {
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
+      if (user == undefined || user == null || user?.error == true) {
+        this.messageService.sendMessage(
+          Utils.createMessage(
+            correlationId,
+            '/order',
+            'WARN',
+            'User not found or not allowed',
+          ),
+        );
+
+        return <MessageDto>{
+          content: 'User not found or authenticated',
+          error: true,
+          status: 404,
+        };
+      }
+    }
+
+    const resp = await this.orderRepo.updateOne(
+      { _id: order._id },
+      {
+        user_id: orderDto.user_id,
+        session_id: orderDto.session_id,
+      },
+    );
+
+    if (resp.modifiedCount == 0) {
+      this.messageService.sendMessage(
+        Utils.createMessage(
+          correlationId,
+          '/order/:order_id',
+          'WARN',
+          'Order not found',
+        ),
+      );
+
+      return <MessageDto>{
+        content: 'Order not found',
+        error: true,
+        status: 200,
+      };
+    }
+
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        '/order/:order_id',
+        'INFO',
+        'Order updated',
+      ),
+    );
+
+    return <MessageDto>{
+      content: 'Order updated',
+      error: false,
+      status: 200,
+    };
+  }
+
+  async completeOrder(req, id: string): Promise<MessageDto> {
     this.networkService.updateStats('/order/complete/:order_id');
 
     const correlationId = v4();
@@ -234,7 +332,10 @@ export class OrderService {
     }
 
     if (order.user_id != undefined) {
-      const user = await this.networkService.verifyUser(headers, correlationId);
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
       if (
         user == undefined ||
         user == null ||
@@ -258,7 +359,7 @@ export class OrderService {
       }
 
       const card = await this.networkService.getCardByUserId(
-        headers,
+        req.headers?.authorization,
         user?.user?._id,
         correlationId,
       );
@@ -281,7 +382,7 @@ export class OrderService {
       }
 
       const resp = await this.networkService.postTransaction(
-        headers,
+        req.headers?.authorization,
         card?._id,
         id,
         correlationId,
@@ -329,7 +430,7 @@ export class OrderService {
       }
     });
 
-    await this.orderRepo.updateOne(
+    this.orderRepo.updateOne(
       { _id: order._id },
       {
         completed: true,
@@ -352,7 +453,7 @@ export class OrderService {
     };
   }
 
-  async deleteOrder(headers, id: string): Promise<MessageDto> {
+  async deleteOrder(req, id: string): Promise<MessageDto> {
     this.networkService.updateStats('/order/:order_id');
 
     const correlationId = v4();
@@ -376,7 +477,10 @@ export class OrderService {
     }
 
     if (order.user_id != undefined) {
-      const user = await this.networkService.verifyUser(headers, correlationId);
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
       if (
         user == undefined ||
         user == null ||

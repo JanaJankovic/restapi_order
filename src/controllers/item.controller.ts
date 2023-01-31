@@ -7,7 +7,7 @@ import {
   Param,
   Post,
   UseFilters,
-  Headers,
+  Req,
 } from '@nestjs/common';
 import { ItemCreateDto, ItemGetDto, ItemUpdateDto } from 'src/models/item.dto';
 import { ItemService } from '../services/item.service';
@@ -23,38 +23,38 @@ export class ItemController {
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Get(':order_id')
-  async getItems(@Headers() headers, @Param() params): Promise<ItemGetDto[]> {
-    return await this.dbService.findItemsByOrderId(headers, params.order_id);
+  async getItems(@Req() req, @Param() params): Promise<ItemGetDto[]> {
+    return await this.dbService.findItemsByOrderId(req, params.order_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
   async createItem(
-    @Headers() headers,
+    @Req() req,
     @Body() body: ItemCreateDto,
   ): Promise<Item | MessageDto> {
-    return await this.dbService.createItem(headers, body);
+    return await this.dbService.createItem(req, body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Put('')
   async updateItem(
-    @Headers() headers,
+    @Req() req,
     @Body() body: ItemUpdateDto,
   ): Promise<MessageDto> {
-    return await this.dbService.updateItem(headers, body);
+    return await this.dbService.updateItem(req, body);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete('empty-cart/:order_id')
-  async deleteMany(@Headers() headers, @Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteMany(headers, params.order_id);
+  async deleteMany(@Req() req, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteMany(req, params.order_id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete(':id')
-  async deleteItem(@Headers() headers, @Param() params): Promise<MessageDto> {
-    return await this.dbService.deleteItem(headers, params.id);
+  async deleteItem(@Req() req, @Param() params): Promise<MessageDto> {
+    return await this.dbService.deleteItem(req, params.id);
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
