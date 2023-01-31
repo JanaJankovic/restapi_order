@@ -25,7 +25,7 @@ export class OrderController {
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Get(':session_id')
-  async getAllGuest(@Param() params): Promise<OrderGetDto[]> {
+  async getAllGuest(@Param() params): Promise<OrderGetDto | MessageDto> {
     return await this.dbService.getGuestOrders(params.session_id);
   }
 

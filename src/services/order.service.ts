@@ -81,43 +81,53 @@ export class OrderService {
     return orders;
   }
 
-  async getGuestOrders(id: string): Promise<OrderGetDto[]> {
+  async getGuestOrders(id: string): Promise<OrderGetDto | MessageDto> {
     this.networkService.updateStats('/order/:session_id');
 
     const correlationId = v4();
 
-    const all = await this.orderRepo.find({ session_id: id }).exec();
+    const o = await this.orderRepo.findOne({ session_id: id }).exec();
 
-    let orders: OrderGetDto[] = [];
-    const promises = all.map(async (o) => {
-      const items = await this.itemService.findItemsByOrderId(
-        o._id,
-        correlationId,
-      );
-      const order: OrderGetDto = <OrderGetDto>{
-        _id: o._id,
-        user_id: o.user_id,
-        session_id: o.session_id,
-        completed: o.completed,
-      };
-      order.items = items;
-
+    if (o == undefined || o == null) {
       this.messageService.sendMessage(
         Utils.createMessage(
           correlationId,
           '/order/:session_id',
-          'INFO',
-          `Found guest order with ${
-            order.items != undefined ? order.items.length : 0
-          } items`,
+          'WARN',
+          'Order not found',
         ),
       );
 
-      return order;
-    });
+      return <MessageDto>{
+        content: 'Couldnt find order from session id',
+        error: true,
+      };
+    }
 
-    orders = await Promise.all(promises);
-    return orders;
+    const items = await this.itemService.findItemsByOrderId(
+      o._id,
+      correlationId,
+    );
+    const order: OrderGetDto = <OrderGetDto>{
+      _id: o._id,
+      user_id: o.user_id,
+      session_id: o.session_id,
+      completed: o.completed,
+    };
+    order.items = items;
+
+    this.messageService.sendMessage(
+      Utils.createMessage(
+        correlationId,
+        '/order/:session_id',
+        'INFO',
+        `Found guest order with ${
+          order.items != undefined ? order.items.length : 0
+        } items`,
+      ),
+    );
+
+    return order;
   }
 
   async getTotalAmount(body: any, id: string): Promise<TotalDto> {
