@@ -391,6 +391,8 @@ export class OrderService {
         };
       }
 
+      console.log('transaction');
+
       const resp = await this.networkService.postTransaction(
         req.headers?.authorization,
         card?._id,
@@ -414,6 +416,7 @@ export class OrderService {
         };
       }
     }
+    console.log('items');
 
     let content = '';
     const items = await this.itemService.findItemsByOrderId(
