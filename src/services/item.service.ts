@@ -9,7 +9,6 @@ import { ArticleDto } from 'src/models/article.dto';
 import { v4 } from 'uuid';
 import { MessageService } from './message.service';
 import { Utils } from 'src/utils/utils';
-import { OrderService } from './order.service';
 import { Order, OrderDocument } from 'src/schema/order.schema';
 
 @Injectable()
@@ -107,17 +106,17 @@ export class ItemService {
       });
   }
 
-  async createItem(
-    headers,
-    itemDto: ItemCreateDto,
-  ): Promise<Item | MessageDto> {
+  async createItem(req, itemDto: ItemCreateDto): Promise<Item | MessageDto> {
     this.networkService.updateStats('post/item');
 
     const correlationId = v4();
 
     const order = await this.orderRepo.findOne({ _id: itemDto.order_id });
     if (order.user_id != undefined) {
-      const user = await this.networkService.verifyUser(headers, correlationId);
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
       if (user == undefined || user == null || user?.error == true) {
         this.messageService.sendMessage(
           Utils.createMessage(
@@ -142,7 +141,7 @@ export class ItemService {
     if (itemExists != undefined && itemExists.length > 0) {
       itemDto.quantity = itemExists[0].quantity + 1;
       return this.updateItem(
-        headers,
+        req,
         new ItemUpdateDto(
           itemExists[0]._id,
           itemDto.quantity,
@@ -160,7 +159,7 @@ export class ItemService {
     return item.save();
   }
 
-  async updateItem(headers, itemDto: ItemUpdateDto): Promise<MessageDto> {
+  async updateItem(req, itemDto: ItemUpdateDto): Promise<MessageDto> {
     this.networkService.updateStats('put/item');
 
     const correlationId = v4();
@@ -192,7 +191,10 @@ export class ItemService {
     }
 
     if (order.user_id != undefined) {
-      const user = await this.networkService.verifyUser(headers, correlationId);
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
       if (user == undefined || user == null || user?.error == true) {
         this.messageService.sendMessage(
           Utils.createMessage(
@@ -276,7 +278,7 @@ export class ItemService {
     return <MessageDto>{ content: content, error: err };
   }
 
-  async deleteItem(headers, item_id: string): Promise<MessageDto> {
+  async deleteItem(req, item_id: string): Promise<MessageDto> {
     this.networkService.updateStats('/item/:item_id');
 
     const correlationId = v4();
@@ -308,7 +310,10 @@ export class ItemService {
     }
 
     if (order.user_id != undefined) {
-      const user = await this.networkService.verifyUser(headers, correlationId);
+      const user = await this.networkService.verifyUser(
+        req.headers?.authorization,
+        correlationId,
+      );
       if (user == undefined || user == null || user?.error == true) {
         this.messageService.sendMessage(
           Utils.createMessage(
