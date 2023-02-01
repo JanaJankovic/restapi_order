@@ -22,9 +22,12 @@ export class ItemController {
   constructor(private readonly dbService: ItemService) {}
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
-  @Get(':order_id')
-  async getItems(@Req() req, @Param() params): Promise<ItemGetDto[]> {
-    return await this.dbService.findItemsByOrderId(req, params.order_id);
+  @Post(':order_id')
+  async getItems(@Body() body, @Param() params): Promise<ItemGetDto[]> {
+    return await this.dbService.findItemsByOrderId(
+      params.order_id,
+      body.correlationId,
+    );
   }
 
   @UseFilters(new MongoFilter(), new BadRequestFilter())
