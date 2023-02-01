@@ -348,7 +348,7 @@ export class ItemService {
       ),
     );
 
-    return <MessageDto>{ content: content, error: err };
+    return <MessageDto>{ content: content, error: !err };
   }
 
   async getArticlesOccurances(

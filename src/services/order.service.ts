@@ -547,6 +547,6 @@ export class OrderService {
       ),
     );
 
-    return <MessageDto>{ content: content, error: err };
+    return <MessageDto>{ content: content, error: !err };
   }
 }
