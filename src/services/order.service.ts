@@ -200,7 +200,11 @@ export class OrderService {
       .findOne({
         $or: [
           { session_id: orderDto.session_id },
-          { user_id: orderDto.user_id, completed: false },
+          {
+            session_id: orderDto.session_id,
+            user_id: orderDto.user_id,
+            completed: false,
+          },
         ],
       })
       .exec();
@@ -391,14 +395,13 @@ export class OrderService {
         };
       }
 
-      console.log('transaction');
-
       const resp = await this.networkService.postTransaction(
         req.headers?.authorization,
         card?._id,
         id,
         correlationId,
       );
+
       if (resp == undefined || resp == null || resp?.error == true) {
         this.messageService.sendMessage(
           Utils.createMessage(
@@ -416,7 +419,6 @@ export class OrderService {
         };
       }
     }
-    console.log('items');
 
     let content = '';
     const items = await this.itemService.findItemsByOrderId(
@@ -443,7 +445,7 @@ export class OrderService {
       }
     });
 
-    this.orderRepo.updateOne(
+    const resp = await this.orderRepo.updateOne(
       { _id: order._id },
       {
         completed: true,
