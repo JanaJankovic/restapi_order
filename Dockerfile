@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:19.0-alpine
 
 RUN npm install -g @nestjs/cli
 
@@ -10,6 +10,6 @@ RUN npm install
 
 COPY . .
 
-CMD ["npm", "run", "start"]
+CMD nest start
 
 EXPOSE 3000

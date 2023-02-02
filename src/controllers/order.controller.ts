@@ -11,7 +11,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { OrderService } from '../services/order.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { OrderCreateDto, OrderGetDto } from 'src/models/order.dto';
 import { Order } from 'src/schema/order.schema';
 import { MessageDto } from 'src/models/message.dto';
@@ -29,6 +29,7 @@ export class OrderController {
     return await this.dbService.getGuestOrders(params.session_id);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Get('user/:user_id')
   async getAllUser(
@@ -44,6 +45,7 @@ export class OrderController {
     return await this.dbService.getTotalAmount(req.body, params.id);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
   async createOne(
@@ -53,6 +55,7 @@ export class OrderController {
     return await this.dbService.createOrder(req, body);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Put(':id')
   async updateOrder(
@@ -63,12 +66,14 @@ export class OrderController {
     return await this.dbService.updateOrder(req, body, params.id);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('complete/:id')
   async completeOrder(@Req() req, @Param() params): Promise<MessageDto> {
     return await this.dbService.completeOrder(req, params.id);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete(':id')
   async deleteOne(@Req() req, @Param() params): Promise<MessageDto> {

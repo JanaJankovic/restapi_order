@@ -11,6 +11,7 @@ async function bootstrap() {
     .setTitle('Order Documentation')
     .setDescription('The order API documentation')
     .setVersion('1.0')
+    .addBearerAuth()
     .addTag('orders')
     .addTag('items')
     .build();

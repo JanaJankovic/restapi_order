@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ItemCreateDto, ItemGetDto, ItemUpdateDto } from 'src/models/item.dto';
 import { ItemService } from '../services/item.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Item } from 'src/schema/item.schema';
 import { MessageDto } from 'src/models/message.dto';
 import { BadRequestFilter, MongoFilter } from 'src/utils/expection.filters';
@@ -30,6 +30,7 @@ export class ItemController {
     );
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Post('')
   async createItem(
@@ -39,6 +40,7 @@ export class ItemController {
     return await this.dbService.createItem(req, body);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Put('')
   async updateItem(
@@ -54,6 +56,7 @@ export class ItemController {
     return await this.dbService.deleteMany(req, params.order_id);
   }
 
+  @ApiBearerAuth()
   @UseFilters(new MongoFilter(), new BadRequestFilter())
   @Delete(':id')
   async deleteItem(@Req() req, @Param() params): Promise<MessageDto> {
